@@ -14,6 +14,8 @@ def get_one_page(month, page, savedir):
     print(save_times)
     save_names = get_name(nogihtml)
     print(save_names)
+    save_image_list = get_images(nogihtml)
+    save(save_image_list, save_names, save_times)
 
 
 def get_html(page_URL):
@@ -25,42 +27,60 @@ def get_html(page_URL):
     return bloghtml 
 
 
-def get_time(bloghtml):
+def get_time(nogihtml):
     #記事の投稿日時を取得する関数
-    time_elements = bloghtml.find_all('div', class_='entrybottom')
+    time_elements = nogihtml.find_all('div', class_='entrybottom')
     savetimes = []
     for time_element in time_elements:
         timehtml = time_element.get_text()
         timestr = str(timehtml)
         time_data = timestr[1:17]
-        time = time_data.replace(' ', '[')
-        savetimes.append(time)
+        time1 = time_data.replace(' ', '_')
+        time2 = time1.replace('/', '')
+        time3 = time2.replace(':', '_')    
+        savetimes.append(time3)
     return savetimes
     
 
-def get_name(bloghtml):
+def get_name(nogihtml):
     #記事の投稿者を取得する関数
-    name_elements = bloghtml.find_all('span', class_="author")
+    name_elements = nogihtml.find_all('span', class_="author")
     
-    JPnames = []
+    jpnames = []
     for name_element in name_elements:
         namehtml = name_element.get_text()
         namestr = str(namehtml)
-        JPnames.append(namestr)
-    save_names = neme_conversion(JPnames)    
+        jpnames.append(namestr)
+    save_names = neme_conversion(jpnames)    
     return save_names
-def neme_conversion(JPnames):
+def neme_conversion(jpnames):
     #取得した名前を英語に変換
     memberlist = member_list()
-    ENGnames = []
-    for JPname in JPnames:
-        ENGnames.append(memberlist[JPname])
-    return ENGnames
-def get_images():
+    engnames = []
+    for jpname in jpnames:
+        if jpname in memberlist:
+            engnames.append(memberlist[jpname])
+        else:
+            print("未登録のメンバーです、unknownとして処理します。")
+            engnames.append("unknown")
+    return engnames
+def get_images(nogihtml):
     #記事から画像URLを取得
-    print("a")  
-
-def save():
+    save_images = []
+    article_bodys = nogihtml.find_all('div', class_="entrybody")  
+    for  article_body in article_bodys:
+        images = article_body.findAll('img')
+        save_images.append(images)
+    return save_images
+def save(save_image_list, save_names, save_times):
     #保存する関数
-    print("a")  
-
+    for num, image_urls in enumerate(save_image_list):
+        print(str(num))
+        name = save_names[num]
+        time = save_times[num]
+        for index, image_url in enumerate(image_urls):
+            save_url = image_url['src']
+            save_image = requests.get(save_url)
+            saveder = "./img/"+name+"/"+name+"_"+time+"_"+str(index)+".jpg"
+            with open(saveder,'wb') as file:
+                file.write(save_image.content)
