@@ -1,4 +1,5 @@
 import click
+import os
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -15,7 +16,7 @@ def get_one_page(month, page, savedir):
     save_names = get_name(nogihtml)
     print(save_names)
     save_image_list = get_images(nogihtml)
-    save(save_image_list, save_names, save_times)
+    image_data(save_image_list, save_names, save_times)
 
 
 def get_html(page_URL):
@@ -72,8 +73,8 @@ def get_images(nogihtml):
         images = article_body.findAll('img')
         save_images.append(images)
     return save_images
-def save(save_image_list, save_names, save_times):
-    #保存する関数
+def image_data(save_image_list, save_names, save_times):
+    #保存の準備の関数
     for num, image_urls in enumerate(save_image_list):
         print(str(num))
         name = save_names[num]
@@ -81,6 +82,18 @@ def save(save_image_list, save_names, save_times):
         for index, image_url in enumerate(image_urls):
             save_url = image_url['src']
             save_image = requests.get(save_url)
-            saveder = "./img/"+name+"/"+name+"_"+time+"_"+str(index)+".jpg"
-            with open(saveder,'wb') as file:
-                file.write(save_image.content)
+            saveder = "./img/"+name+"/"
+            save_name = name+"_"+time+"_"+str(index)+".jpg"
+            save_der_name = saveder+save_name
+            print(save_der_name)
+            if os.path.isdir(saveder):
+                print("ディレクトリが存在します")
+                save(save_der_name, save_image)
+            else:
+                 print("ディレクトリが存在しません作成し続行します")
+                 os.makedirs(saveder)
+                 save(save_der_name, save_image)
+def save(save_der_name, save_image):
+    #保存の関数 
+    with open(save_der_name,'wb') as file:
+        file.write(save_image.content)
