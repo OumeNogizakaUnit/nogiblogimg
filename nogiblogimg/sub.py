@@ -3,6 +3,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import re
+from datetime import datetime
+
 from nogiblogimg.member_list import member_list
 
 
@@ -34,12 +36,12 @@ def get_time(nogihtml):
     savetimes = []
     for time_element in time_elements:
         timehtml = time_element.get_text()
-        timestr = str(timehtml)
-        time_data = timestr[1:17]
-        time1 = time_data.replace(' ', '_')
-        time2 = time1.replace('/', '')
-        time3 = time2.replace(':', '_')    
-        savetimes.append(time3)
+        timestr = timehtml.strip().split("｜")[0]
+        # timestr sample: 2020/01/31 23:50
+        timedata = datetime.strptime(timestr, '%Y/%m/%d %H:%M')
+        # article_timestr sample: 202001312350
+        article_timestr = timedata.strftime('%Y%m%d%H%M')
+        savetimes.append(article_timestr)
     return savetimes
     
 
