@@ -9,6 +9,6 @@ def main():
     month = "202001"
     savedir = "./img"
     page = 1
-    get_one_page(month, page, savedir)
+    get_one_page(month, page)
 
 
