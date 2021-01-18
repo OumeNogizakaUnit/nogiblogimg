@@ -1,31 +1,54 @@
 import click
 import os
+import sys
 import requests
 from bs4 import BeautifulSoup
 import re
+from datetime import datetime
+
 from nogiblogimg.member_list import member_list
 
 
-def get_one_page(month, page):
+def get_one_page(month, page=1):
     #指定したページの処理の関数
-    page_URL="http://blog.nogizaka46.com/?p="+str(page)+"&d="+str(month)
-    print(str(month)+"の"+str(page)+"ページ目の処理開始")
-    nogihtml = get_html(page_URL)
+
+    page_URL="http://blog.nogizaka46.com/"
+    print("開始します")
+    nogihtml = get_html(page_URL, month, page)
+    print(str(month)+"の"+str(page)+"ページの処理開始します")
     save_times = get_time(nogihtml)
     save_names = get_name(nogihtml)
     save_image_list = get_images(nogihtml)
     image_data(save_image_list, save_names, save_times)
-    print(str(month)+"の"+str(page)+"ページ目の処理終了")
+    print(str(month)+"の"+str(page)+"ページの処理終了します")
 
-
-def get_html(page_URL):
+def get_html(page_URL, month, page):
     #HTMLを取得するための処理
     ua ="Mozilla/5.0 (Windows NT 10.0; Win64; x64)"\
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100"
-    response = requests.get(page_URL, headers={"User-Agent": ua})
-    nogizakahtml = BeautifulSoup(response.content, "html.parser")
-    bloghtml = nogizakahtml.find('div', class_="right2in")
+    query = {'p': page,'d': month}
+    response = requests.get(page_URL, params=query, headers={"User-Agent": ua})
+    if response.status_code != 200:
+        print("サイトに入るのを拒否られました,終了します")
+        sys.exit()
+    else:
+        nogizakahtml = BeautifulSoup(response.content, "html.parser")
+        bloghtml = nogizakahtml.find('div', class_="right2in")
+        #pagenum = get_page_num(bloghtml)
     return bloghtml 
+
+
+def get_page_num(bloghtml):
+    #その月のページが何ページあるか取得する関数
+    pagehtml = bloghtml.find('div', class_="paginate")
+    print(pagehtml)
+    pagelist = pagehtml.find_all('a')
+    page_list = []
+    for page in pagelist:
+        pagetext = str(page.text)
+        s.strip('')
+        page_list.append(pagetext)
+    return page_list
 
 
 def get_time(nogihtml):
@@ -34,12 +57,12 @@ def get_time(nogihtml):
     savetimes = []
     for time_element in time_elements:
         timehtml = time_element.get_text()
-        timestr = str(timehtml)
-        time_data = timestr[1:17]
-        time1 = time_data.replace(' ', '_')
-        time2 = time1.replace('/', '')
-        time3 = time2.replace(':', '_')    
-        savetimes.append(time3)
+        timestr = timehtml.strip().split("｜")[0]
+        # timestr sample: 2020/01/31 23:50
+        timedata = datetime.strptime(timestr, '%Y/%m/%d %H:%M')
+        # article_timestr sample: 202001312350
+        article_timestr = timedata.strftime('%Y%m%d%H%M')
+        savetimes.append(article_timestr)
     return savetimes
     
 
