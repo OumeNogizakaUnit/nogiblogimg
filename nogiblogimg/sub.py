@@ -42,18 +42,17 @@ def get_html(page_URL, month, page):
 def get_page_num(bloghtml):
     #その月が何ページあるかどこのページからでも取得する関数
     pagehtml = bloghtml.find('div', class_="paginate")
-    pagelist = pagehtml.find_all('a')
-    get_page_list = []
-    for page in pagelist:
-        pagetext = str(page.text)
-        get_page_list.append(pagetext)
-    page_num = len(get_page_list)
-    if "＜" in get_page_list and "＞" in get_page_list:
-        page_list = page_num -1
-    else:
-        page_list = page_num
-    print(page_list)
-    return page_list
+    pagelist_el = pagehtml.find_all('a')
+    page_str_list = [el.text.strip() for el in pagelist_el]
+    page_list = []
+    for page in page_str_list:
+        try:
+            page_num = int(page)
+            page_list.append(page_num)
+        except ValueError as error:
+            continue
+    page_max = max(page_list)
+    return page_max
 
 
 def get_time(nogihtml):
