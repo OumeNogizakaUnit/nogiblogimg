@@ -1,6 +1,4 @@
 import click
-import requests
-from bs4 import BeautifulSoup
 import re
 from nogiblogimg.sub import get_one_page
 
@@ -8,6 +6,7 @@ from nogiblogimg.sub import get_one_page
 def main():
     month = "202001"
     page = 19
-    get_one_page(month, page)
+    base_dir = './img'
+    get_one_page(month, page, base_dir)
 
 
