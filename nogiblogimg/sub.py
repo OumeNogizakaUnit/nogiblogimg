@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import re
 from datetime import datetime
 
-from nogiblogimg.member_list import member_list
+from nogiblogimg import MEMBER_LIST
 
 
 def get_one_page(month, page):
@@ -85,11 +85,10 @@ def get_name(nogihtml):
 
 def neme_conversion(jpnames):
     #取得した名前を英語に変換
-    memberlist = member_list()
     engnames = []
     for jpname in jpnames:
-        if jpname in memberlist:
-            engnames.append(memberlist[jpname])
+        if jpname in MEMBER_LIST:
+            engnames.append(MEMBER_LIST[jpname])
         else:
             print("未登録のメンバーです、unknownとして処理します。")
             engnames.append("unknown")
