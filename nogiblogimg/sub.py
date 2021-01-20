@@ -10,7 +10,7 @@ from nogiblogimg.member_list import member_list
 
 
 def get_one_page(month, page):
-    #最初に指定したページの処理の関数
+    #最初に指定したページの処理の関数だよ。
 
     page_URL="http://blog.nogizaka46.com/"
     print("開始します")
@@ -44,6 +44,7 @@ def get_page_num(bloghtml):
     pagehtml = bloghtml.find('div', class_="paginate")
     pagelist_el = pagehtml.find_all('a')
     page_str_list = [el.text.strip() for el in pagelist_el]
+    print(page_str_list)
     page_list = []
     for page in page_str_list:
         try:
@@ -52,6 +53,7 @@ def get_page_num(bloghtml):
         except ValueError as error:
             continue
     page_max = max(page_list)
+    print(page_max)
     return page_max
 
 
