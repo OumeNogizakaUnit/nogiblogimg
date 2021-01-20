@@ -7,7 +7,7 @@ from nogiblogimg.sub import get_one_page
 @click.command()
 def main():
     month = "202001"
-    page = 1
+    page = 19
     get_one_page(month, page)
 
 

@@ -9,13 +9,14 @@ from datetime import datetime
 from nogiblogimg.member_list import member_list
 
 
-def get_one_page(month, page=1):
-    #指定したページの処理の関数
+def get_one_page(month, page):
+    #最初に指定したページの処理の関数
 
     page_URL="http://blog.nogizaka46.com/"
     print("開始します")
-    nogihtml = get_html(page_URL, month, page)
-    print(str(month)+"の"+str(page)+"ページの処理開始します")
+    nogihtml, pagenum  = get_html(page_URL, month, page)
+    print(str(month)+"の"+str(page)+"ページ処理開始します")
+    sys.exit()
     save_times = get_time(nogihtml)
     save_names = get_name(nogihtml)
     save_image_list = get_images(nogihtml)
@@ -34,20 +35,24 @@ def get_html(page_URL, month, page):
     else:
         nogizakahtml = BeautifulSoup(response.content, "html.parser")
         bloghtml = nogizakahtml.find('div', class_="right2in")
-        #pagenum = get_page_num(bloghtml)
-    return bloghtml 
+        pagenum = get_page_num(bloghtml)
+    return bloghtml, pagenum
 
 
 def get_page_num(bloghtml):
-    #その月のページが何ページあるか取得する関数
+    #その月が何ページあるかどこのページからでも取得する関数
     pagehtml = bloghtml.find('div', class_="paginate")
-    print(pagehtml)
     pagelist = pagehtml.find_all('a')
-    page_list = []
+    get_page_list = []
     for page in pagelist:
         pagetext = str(page.text)
-        s.strip('')
-        page_list.append(pagetext)
+        get_page_list.append(pagetext)
+    page_num = len(get_page_list)
+    if "＜" in get_page_list and "＞" in get_page_list:
+        page_list = page_num -1
+    else:
+        page_list = page_num
+    print(page_list)
     return page_list
 
 
