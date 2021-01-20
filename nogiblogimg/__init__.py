@@ -1,3 +1,4 @@
+BASE_URL = "http://blog.nogizaka46.com/"
 MEMBER_LIST =  {"秋元真夏":"Akimoto_Manatu",
                 "生田絵梨花":"Ikuta_Erika",
                 "伊藤純奈":"Ito_Zyunna", 

@@ -6,15 +6,14 @@ from bs4 import BeautifulSoup
 import re
 from datetime import datetime
 
-from nogiblogimg import MEMBER_LIST
+from nogiblogimg import MEMBER_LIST, BASE_URL
 
 
 def get_one_page(month, page):
     #最初に指定したページの処理の関数
 
-    page_URL="http://blog.nogizaka46.com/"
     print("開始します")
-    nogihtml, pagenum  = get_html(page_URL, month, page)
+    nogihtml = get_html(month, page)
     print(str(month)+"の"+str(page)+"ページ処理開始します")
     sys.exit()
     save_times = get_time(nogihtml)
@@ -23,24 +22,25 @@ def get_one_page(month, page):
     image_data(save_image_list, save_names, save_times)
     print(str(month)+"の"+str(page)+"ページの処理終了します")
 
-def get_html(page_URL, month, page):
+def get_html(month, page):
     #HTMLを取得するための処理
     ua ="Mozilla/5.0 (Windows NT 10.0; Win64; x64)"\
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100"
     query = {'p': page,'d': month}
-    response = requests.get(page_URL, params=query, headers={"User-Agent": ua})
+    response = requests.get(BASE_URL, params=query, headers={"User-Agent": ua})
     if response.status_code != 200:
         print("サイトに入るのを拒否られました,終了します")
+        print(response.text)
         sys.exit()
     else:
         nogizakahtml = BeautifulSoup(response.content, "html.parser")
         bloghtml = nogizakahtml.find('div', class_="right2in")
-        pagenum = get_page_num(bloghtml)
-    return bloghtml, pagenum
+    return bloghtml
 
 
-def get_page_num(bloghtml):
+def get_page_num(month):
     #その月が何ページあるかどこのページからでも取得する関数
+    bloghtml = get_html(month, page=1)
     pagehtml = bloghtml.find('div', class_="paginate")
     pagelist_el = pagehtml.find_all('a')
     page_str_list = [el.text.strip() for el in pagelist_el]
