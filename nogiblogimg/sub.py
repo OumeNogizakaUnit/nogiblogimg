@@ -101,9 +101,10 @@ def get_images(nogihtml):
     article_bodys = nogihtml.find_all('div', class_="entrybody")
     for article_body in article_bodys:
         images = article_body.findAll('img')
-        image_urls = [url.get('src') for url in images]
-        save_images.append(image_urls)
-    print(save_images)
+        image_urls = [url.get('src','') for url in images]
+        image_urls2 = [i for i in image_urls if not i == '']
+        save_images.append(image_urls2)
+        print(image_urls2)
     return save_images
 
 
