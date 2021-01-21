@@ -5,26 +5,27 @@ from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 
-from nogiblogimg import BASE_URL, MEMBER_LIST
+from nogiblogimg import BASE_URL, MEMBER_LIST, ua
 
 
 def get_one_page(month, page, base_dir):
     # 最初に指定したページの処理の関数
 
     print("開始します")
-    nogihtml = get_html(month, page)
-    print(str(month)+"の"+str(page)+"ページ処理開始します")
-    save_times = get_time(nogihtml)
-    save_names = get_name(nogihtml)
-    save_image_list = get_images(nogihtml)
-    save_image_data(save_image_list, save_names, save_times, base_dir)
-    print(str(month)+"の"+str(page)+"ページの処理終了します")
+    page_num = get_page_num(month)
+    page_num_mux = page_num -1
+    for blogpage in range(page, page_num):
+        nogihtml = get_html(month, blogpage)
+        print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページ処理開始します")
+        save_times = get_time(nogihtml)
+        save_names = get_name(nogihtml)
+        save_image_list = get_images(nogihtml)
+        save_image_data(save_image_list, save_names, save_times, base_dir)
+        print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページの処理終了します")
 
 
 def get_html(month, page):
     # HTMLを取得するための処理
-    ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"\
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100"
     query = {'p': page, 'd': month}
     response = requests.get(BASE_URL, params=query, headers={"User-Agent": ua})
     if response.status_code != 200:
@@ -50,7 +51,7 @@ def get_page_num(month):
             page_list.append(page_num)
         except ValueError:
             continue
-    page_max = max(page_list)
+    page_max = 1+max(page_list)
     return page_max
 
 
@@ -100,8 +101,9 @@ def get_images(nogihtml):
     article_bodys = nogihtml.find_all('div', class_="entrybody")
     for article_body in article_bodys:
         images = article_body.findAll('img')
-        image_urls = [url.get('src', '') for url in images]
+        image_urls = [url.get('src') for url in images]
         save_images.append(image_urls)
+    print(save_images)
     return save_images
 
 
