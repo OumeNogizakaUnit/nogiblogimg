@@ -36,11 +36,11 @@ MEMBER_LIST = {"秋元真夏": "akimoto_manatu",
                "佐藤璃果": "sato_ruka",
                "柴田柚菜": "sibata_yuna",
                "清宮レイ": "seimiya_rei",
-               "田村真祐": "tamura_mayu",
+               "田村真佑": "tamura_mayu",
                "筒井あやめ": "tutui_ayame",
                "早川聖来": "hayakawa_seira",
                "林瑠奈": "hayasi_runa",
-               "松尾美祐": "matuo_miyu",
+               "松尾美佑": "matuo_miyu",
                "矢久保美緒": "yakubo_mio",
                "弓木奈於": "yumiki_nao",
                "新4期生リレー": "new4generation",
@@ -50,3 +50,5 @@ MEMBER_LIST = {"秋元真夏": "akimoto_manatu",
                "運営スタッフ": "staff"}
 ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"\
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100"
+
+

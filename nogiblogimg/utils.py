@@ -8,44 +8,69 @@ from bs4 import BeautifulSoup
 from nogiblogimg import BASE_URL, MEMBER_LIST, ua
 
 
-def get_one_page(month, page, base_dir):
-    # 最初に指定したページの処理の関数
+def get_one_page(page, base_dir, start_month, end_month):
+    # 指定したページの処理の関数
+    print("開始します。")
+    month_page_list = month_list(start_month, end_month)
+    for monthurl in month_page_list:
+        month = str(monthurl[-6:])
+        page_num = get_page_num(month)
+        page_num_mux = page_num -1
+        for blogpage in range(page, page_num):
+            nogihtml = get_html(month, blogpage)
+            print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページ処理開始します")
+            save_times = get_time(nogihtml)
+            save_names = get_name(nogihtml)
+            save_image_list = get_images(nogihtml)
+            save_image_data(save_image_list, save_names, save_times, base_dir)
+            print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページの処理終了します")
+    print("終了しました。")
 
 
-    print("開始します")
-    page_num = get_page_num(month)
-    page_num_mux = page_num -1
-    for blogpage in range(page, page_num):
-        nogihtml = get_html(month, blogpage)
-        print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページ処理開始します")
-        save_times = get_time(nogihtml)
-        save_names = get_name(nogihtml)
-        save_image_list = get_images(nogihtml)
-        save_image_data(save_image_list, save_names, save_times, base_dir)
-        print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページの処理終了します")
-
-
-def get_html(month, page):
-    # HTMLを取得するための処理
-    query = {'p': page, 'd': month}
-    response = requests.get(BASE_URL, params=query, headers={"User-Agent": ua})
+def response(response):
+    #共通でレスポンス投げたあとする関数
     if response.status_code != 200:
         print("サイトに入るのを拒否られました,終了します")
         print(response.text)
         sys.exit()
     else:
-        nogizakahtml = BeautifulSoup(response.content, "html.parser")
-        bloghtml = nogizakahtml.find('div', class_="right2in")
+        meinnogizakahtml = BeautifulSoup(response.content, "html.parser")
+    
+    return meinnogizakahtml
+
+def month_list(start_month, end_month):
+    # 月のURLを取得する関数
+    response_ = requests.get(BASE_URL, headers={"User-Agent": ua})
+    meinnogizakahtml = response(response_)
+    meinbloghtml = meinnogizakahtml.find('div', id="sidearchives")
+    html_month_list = meinbloghtml.find_all('option')
+    all_month_list = [url.get('value') for url in html_month_list]
+    month_list =  month_list_pro(all_month_list, start_month, end_month)
+    return month_list
+
+
+def month_list_pro(all_month_list, start_month, end_month):
+    #処理したい月のリストをつくる関数
+    start_index = all_month_list.index('http://blog.nogizaka46.com/?d='+end_month)
+    end_index = all_month_list.index('http://blog.nogizaka46.com/?d='+start_month)+1
+    month_list = all_month_list[start_index:end_index]
+    return month_list
+
+def get_html(month, blogpage):
+    # HTMLを取得するための処理
+    query = {'p': blogpage, 'd': month}
+    response_ = requests.get(BASE_URL, params=query, headers={"User-Agent": ua})
+    nogizakahtml = response(response_)
+    bloghtml = nogizakahtml.find('div', class_="right2in")
     return bloghtml
 
 
 def get_page_num(month):
     # その月が何ページあるかどこのページからでも取得する関数
-    bloghtml = get_html(month, page=1)
-    pagehtml = bloghtml.find('div', class_="paginate")
+    meinnogizakahtml = get_html(month, blogpage=1)
+    pagehtml = meinnogizakahtml.find('div', class_="paginate")
     pagelist_el = pagehtml.find_all('a')
     page_str_list = [el.text.strip() for el in pagelist_el]
-    print(page_str_list)
     page_list = []
     for page in page_str_list:
         try:
@@ -53,7 +78,7 @@ def get_page_num(month):
             page_list.append(page_num)
         except ValueError:
             continue
-    page_max = 1+max(page_list)
+    page_max = max(page_list)+1
 
     return page_max
 
@@ -101,14 +126,15 @@ def neme_conversion(jpnames):
 def get_images(nogihtml):
     # 記事から画像URLを取得
     save_images = []
-    emozi = re.compile(r'image-embed')
+    gif = re.compile(r'.gif')
+    rehtml = re.compile(r'http')
     article_bodys = nogihtml.find_all('div', class_="entrybody")
     for article_body in article_bodys:
         images = article_body.findAll('img')
-        nonemozi_images = [nonemozi for nonemozi in images if not re.search(emozi,str(nonemozi))]
-        image_urls = [url.get('src','') for url in nonemozi_images]
-        image_urls2 = [i for i in image_urls if not i == '']
-        save_images.append(image_urls2)
+        all_image_urls = [url.get('src','') for url in images]
+        non_url_image_urls = [i for i in all_image_urls if not i == '' and re.match(rehtml,i)]
+        image_urls = [non_gif for non_gif in non_url_image_urls if not re.search(gif,non_gif)] 
+        save_images.append(image_urls)
     return save_images
 
 
