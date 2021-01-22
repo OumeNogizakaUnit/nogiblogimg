@@ -1,6 +1,6 @@
 import click
 
-from nogiblogimg.sub import get_one_page
+from nogiblogimg.utils import get_one_page
 
 
 @click.command()
