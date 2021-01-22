@@ -11,6 +11,7 @@ from nogiblogimg import BASE_URL, MEMBER_LIST, ua
 def get_one_page(month, page, base_dir):
     # 最初に指定したページの処理の関数
 
+
     print("開始します")
     page_num = get_page_num(month)
     page_num_mux = page_num -1
@@ -44,6 +45,7 @@ def get_page_num(month):
     pagehtml = bloghtml.find('div', class_="paginate")
     pagelist_el = pagehtml.find_all('a')
     page_str_list = [el.text.strip() for el in pagelist_el]
+    print(page_str_list)
     page_list = []
     for page in page_str_list:
         try:
@@ -52,6 +54,7 @@ def get_page_num(month):
         except ValueError:
             continue
     page_max = 1+max(page_list)
+
     return page_max
 
 
@@ -123,9 +126,12 @@ def save_image_data(save_image_list, save_names, save_times, base_dir):
 
 
 def save_image_data_one(imageurls, name, time, save_path):
+    allow_suffix_list = ['jpg', 'jpeg', 'png', 'svg']
     for index, imageurl in enumerate(imageurls):
         res = requests.get(imageurl)
         image_suffix = imageurl.split('.')[-1]
+        if image_suffix not in allow_suffix_list:
+            continue
         image_filename = f'{name}_{time}_{index:0>3}.{image_suffix}'
         image_path = Path(save_path, image_filename)
         with image_path.open('wb') as fd:
