@@ -1,7 +1,7 @@
 import sys
 from datetime import datetime
 from pathlib import Path
-
+import re
 import requests
 from bs4 import BeautifulSoup
 
@@ -98,13 +98,14 @@ def neme_conversion(jpnames):
 def get_images(nogihtml):
     # 記事から画像URLを取得
     save_images = []
+    emozi = re.compile(r'image-embed')
     article_bodys = nogihtml.find_all('div', class_="entrybody")
     for article_body in article_bodys:
         images = article_body.findAll('img')
-        image_urls = [url.get('src','') for url in images]
+        nonemozi_images = [nonemozi for nonemozi in images if not re.search(emozi,str(nonemozi))]
+        image_urls = [url.get('src','') for url in nonemozi_images]
         image_urls2 = [i for i in image_urls if not i == '']
         save_images.append(image_urls2)
-        print(image_urls2)
     return save_images
 
 
