@@ -1,46 +1,47 @@
-import click
-import os
 import sys
+from datetime import datetime
+from pathlib import Path
+
 import requests
 from bs4 import BeautifulSoup
-import re
-from datetime import datetime
 
-from nogiblogimg.member_list import member_list
+from nogiblogimg import BASE_URL, MEMBER_LIST, ua
 
 
-def get_one_page(month, page):
-    #最初に指定したページの処理の関数だよ。
+def get_one_page(month, page, base_dir):
+    # 最初に指定したページの処理の関数
 
-    page_URL="http://blog.nogizaka46.com/"
+
     print("開始します")
-    nogihtml, pagenum  = get_html(page_URL, month, page)
-    print(str(month)+"の"+str(page)+"ページ処理開始します")
-    sys.exit()
-    save_times = get_time(nogihtml)
-    save_names = get_name(nogihtml)
-    save_image_list = get_images(nogihtml)
-    image_data(save_image_list, save_names, save_times)
-    print(str(month)+"の"+str(page)+"ページの処理終了します")
+    page_num = get_page_num(month)
+    page_num_mux = page_num -1
+    for blogpage in range(page, page_num):
+        nogihtml = get_html(month, blogpage)
+        print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページ処理開始します")
+        save_times = get_time(nogihtml)
+        save_names = get_name(nogihtml)
+        save_image_list = get_images(nogihtml)
+        save_image_data(save_image_list, save_names, save_times, base_dir)
+        print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページの処理終了します")
 
-def get_html(page_URL, month, page):
-    #HTMLを取得するための処理
-    ua ="Mozilla/5.0 (Windows NT 10.0; Win64; x64)"\
-    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100"
-    query = {'p': page,'d': month}
-    response = requests.get(page_URL, params=query, headers={"User-Agent": ua})
+
+def get_html(month, page):
+    # HTMLを取得するための処理
+    query = {'p': page, 'd': month}
+    response = requests.get(BASE_URL, params=query, headers={"User-Agent": ua})
     if response.status_code != 200:
         print("サイトに入るのを拒否られました,終了します")
+        print(response.text)
         sys.exit()
     else:
         nogizakahtml = BeautifulSoup(response.content, "html.parser")
         bloghtml = nogizakahtml.find('div', class_="right2in")
-        pagenum = get_page_num(bloghtml)
-    return bloghtml, pagenum
+    return bloghtml
 
 
-def get_page_num(bloghtml):
-    #その月が何ページあるかどこのページからでも取得する関数
+def get_page_num(month):
+    # その月が何ページあるかどこのページからでも取得する関数
+    bloghtml = get_html(month, page=1)
     pagehtml = bloghtml.find('div', class_="paginate")
     pagelist_el = pagehtml.find_all('a')
     page_str_list = [el.text.strip() for el in pagelist_el]
@@ -50,15 +51,15 @@ def get_page_num(bloghtml):
         try:
             page_num = int(page)
             page_list.append(page_num)
-        except ValueError as error:
+        except ValueError:
             continue
-    page_max = max(page_list)
-    print(page_max)
+    page_max = 1+max(page_list)
+
     return page_max
 
 
 def get_time(nogihtml):
-    #記事の投稿日時を取得する関数
+    # 記事の投稿日時を取得する関数
     time_elements = nogihtml.find_all('div', class_='entrybottom')
     savetimes = []
     for time_element in time_elements:
@@ -70,28 +71,27 @@ def get_time(nogihtml):
         article_timestr = timedata.strftime('%Y%m%d%H%M')
         savetimes.append(article_timestr)
     return savetimes
-    
+
 
 def get_name(nogihtml):
-    #記事の投稿者を取得する関数
+    # 記事の投稿者を取得する関数
     name_elements = nogihtml.find_all('span', class_="author")
-    
+
     jpnames = []
     for name_element in name_elements:
         namehtml = name_element.get_text()
         namestr = str(namehtml)
         jpnames.append(namestr)
-    save_names = neme_conversion(jpnames)    
+    save_names = neme_conversion(jpnames)
     return save_names
 
 
 def neme_conversion(jpnames):
-    #取得した名前を英語に変換
-    memberlist = member_list()
+    # 取得した名前を英語に変換
     engnames = []
     for jpname in jpnames:
-        if jpname in memberlist:
-            engnames.append(memberlist[jpname])
+        if jpname in MEMBER_LIST:
+            engnames.append(MEMBER_LIST[jpname])
         else:
             print("未登録のメンバーです、unknownとして処理します。")
             engnames.append("unknown")
@@ -99,35 +99,40 @@ def neme_conversion(jpnames):
 
 
 def get_images(nogihtml):
-    #記事から画像URLを取得
+    # 記事から画像URLを取得
     save_images = []
-    article_bodys = nogihtml.find_all('div', class_="entrybody")  
-    for  article_body in article_bodys:
+    article_bodys = nogihtml.find_all('div', class_="entrybody")
+    for article_body in article_bodys:
         images = article_body.findAll('img')
-        save_images.append(images)
+        image_urls = [url.get('src','') for url in images]
+        image_urls2 = [i for i in image_urls if not i == '']
+        save_images.append(image_urls2)
+        print(image_urls2)
     return save_images
 
 
-def image_data(save_image_list, save_names, save_times):
-    #保存の準備の関数
-    for num, image_urls in enumerate(save_image_list):
-        name = save_names[num]
-        time = save_times[num]
-        for index, image_url in enumerate(image_urls):
-            save_url = image_url['src']
-            save_image = requests.get(save_url)
-            saveder = "./img/"+name+"/"
-            save_name = name+"_"+time+"_"+str(index)+".jpg"
-            save_der_name = saveder+save_name
-            if os.path.isdir(saveder):
-                save(save_der_name, save_image)
-            else:
-                 print("ディレクトリが存在しません作成し続行します")
-                 os.makedirs(saveder)
-                 save(save_der_name, save_image)
+def save_image_data(save_image_list, save_names, save_times, base_dir):
+    # 保存の準備の関数
+    save_base_path = Path(base_dir)
+    for imagedata in zip(save_image_list, save_names, save_times):
+        imageurls = imagedata[0]
+        name = imagedata[1]
+        time = imagedata[2]
+        save_path = Path(save_base_path, name)
+        if save_path.exists() is False:
+            save_path.mkdir(parents=True)
+        save_image_data_one(imageurls, name, time, save_path)
 
 
-def save(save_der_name, save_image):
-    #保存の関数 
-    with open(save_der_name,'wb') as file:
-        file.write(save_image.content)
+def save_image_data_one(imageurls, name, time, save_path):
+    allow_suffix_list = ['jpg', 'jpeg', 'png', 'svg']
+    for index, imageurl in enumerate(imageurls):
+        res = requests.get(imageurl)
+        image_suffix = imageurl.split('.')[-1]
+        if image_suffix not in allow_suffix_list:
+            continue
+        image_filename = f'{name}_{time}_{index:0>3}.{image_suffix}'
+        image_path = Path(save_path, image_filename)
+        with image_path.open('wb') as fd:
+            fd.write(res.content)
+        print(image_path)
