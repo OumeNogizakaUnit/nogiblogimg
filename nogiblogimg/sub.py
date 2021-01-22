@@ -122,9 +122,12 @@ def save_image_data(save_image_list, save_names, save_times, base_dir):
 
 
 def save_image_data_one(imageurls, name, time, save_path):
+    allow_suffix_list = ['jpg', 'jpeg', 'png', 'svg']
     for index, imageurl in enumerate(imageurls):
         res = requests.get(imageurl)
         image_suffix = imageurl.split('.')[-1]
+        if image_suffix not in allow_suffix_list:
+            continue
         image_filename = f'{name}_{time}_{index:0>3}.{image_suffix}'
         image_path = Path(save_path, image_filename)
         with image_path.open('wb') as fd:
