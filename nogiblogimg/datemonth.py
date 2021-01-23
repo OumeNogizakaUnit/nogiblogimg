@@ -1,13 +1,11 @@
-from datetime import datetime
 
 
-def str2bigmonth(datestr):
+def datetime2bigmonth(date):
     '''
-    datestr を bigmonth に変換する関数
+    datetime を bigmonth に変換する関数
     例
     202012 -> 2020*12 + 12 = 240252
     '''
-    date = datetime.strptime(datestr, '%Y%m')
     year = date.year
     month = date.month
     return year * 12 + month
