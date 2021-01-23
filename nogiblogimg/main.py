@@ -1,21 +1,32 @@
 import click
 
-from nogiblogimg.datemonth import bigmonth2str, str2bigmonth
+from nogiblogimg.datemonth import bigmonth2str, datetime2bigmonth
 from nogiblogimg.utils import get_one_month
 
 
 @click.command()
-def main():
-    # 取得開始したい月 "201111"以上
-    start_month = "201111"
-    # 取得終了したい月 最新の月以下
-    end_month = "201202"
-    # セーブ場所
-    base_dir = './img'
+@click.option('-s',
+              '--start',
+              help='集計開始月',
+              default='201111',
+              show_default=True,
+              type=click.DateTime(formats=['%Y%m']))
+@click.option('-e',
+              '--end',
+              help='集計終了月',
+              default='201112',
+              show_default=True,
+              type=click.DateTime(formats=['%Y%m']))
+@click.argument('savedir',
+                type=click.Path())
+def main(start, end, savedir):
+    '''
+    SAVEDIR に画像を保存する
+    '''
     print("開始")
-    bigstart_month = str2bigmonth(start_month)
-    bigend_month = str2bigmonth(end_month)
+    bigstart_month = datetime2bigmonth(start)
+    bigend_month = datetime2bigmonth(end)
     for big_month in range(bigstart_month, bigend_month+1):
         month = bigmonth2str(big_month)
-        get_one_month(base_dir, month)
+        get_one_month(savedir, month)
     print("終了")
