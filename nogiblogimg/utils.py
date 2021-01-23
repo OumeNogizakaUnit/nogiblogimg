@@ -1,11 +1,10 @@
-import sys
 from datetime import datetime
 from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup
 
-from nogiblogimg import BASE_URL, MEMBER_LIST, ua
+from nogiblogimg import BASE_URL, MEMBER_LIST
 
 
 def get_one_page(page, base_dir, start_month, end_month):
@@ -27,22 +26,24 @@ def get_one_page(page, base_dir, start_month, end_month):
     print("終了しました。")
 
 
-def response(response):
+def urlget(url, query={}):
     # 共通でレスポンス投げたあとする関数
-    if response.status_code != 200:
-        print("サイトに入るのを拒否られました,終了します")
-        print(response.text)
-        sys.exit()
-    else:
-        meinnogizakahtml = BeautifulSoup(response.content, "html.parser")
-
-    return meinnogizakahtml
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"\
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100"
+    headers = {'User-Agent': user_agent}
+    res = requests.get(url,
+                       params=query,
+                       headers=headers)
+    if res.status_code != 200:
+        print(res.text)
+        return None
+    return res
 
 
 def month_list(start_month, end_month):
     # 月のURLを取得する関数
-    response_ = requests.get(BASE_URL, headers={"User-Agent": ua})
-    meinnogizakahtml = response(response_)
+    res = urlget(BASE_URL)
+    meinnogizakahtml = BeautifulSoup(res.text, "html.parser")
     meinbloghtml = meinnogizakahtml.find('div', id="sidearchives")
     html_month_list = meinbloghtml.find_all('option')
     all_month_list = [url.get('value') for url in html_month_list]
@@ -63,9 +64,8 @@ def month_list_pro(all_month_list, start_month, end_month):
 def get_html(month, blogpage):
     # HTMLを取得するための処理
     query = {'p': blogpage, 'd': month}
-    response_ = requests.get(BASE_URL, params=query,
-                             headers={"User-Agent": ua})
-    nogizakahtml = response(response_)
+    res = urlget(BASE_URL, query=query)
+    nogizakahtml = BeautifulSoup(res.text, "html.parser")
     bloghtml = nogizakahtml.find('div', class_="right2in")
     return bloghtml
 
@@ -168,7 +168,7 @@ def save_image_data(save_image_list, save_names, save_times, base_dir):
 
 def save_image_data_one(imageurls, name, time, save_path):
     for index, imageurl in enumerate(imageurls):
-        res = requests.get(imageurl)
+        res = urlget(imageurl)
         image_suffix = imageurl.split('.')[-1]
         image_filename = f'{name}_{time}_{index:0>3}.{image_suffix}'
         image_path = Path(save_path, image_filename)
