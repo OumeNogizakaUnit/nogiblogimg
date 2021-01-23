@@ -1,7 +1,7 @@
 import sys
 from datetime import datetime
 from pathlib import Path
-import re
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -15,28 +15,29 @@ def get_one_page(page, base_dir, start_month, end_month):
     for monthurl in month_page_list:
         month = str(monthurl[-6:])
         page_num = get_page_num(month)
-        page_num_mux = page_num -1
+        page_num_mux = page_num - 1
         for blogpage in range(page, page_num):
             nogihtml = get_html(month, blogpage)
-            print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページ処理開始します")
+            print(f'{month}の{blogpage}/{page_num_mux}ページ処理開始します')
             save_times = get_time(nogihtml)
             save_names = get_name(nogihtml)
             save_image_list = get_images(nogihtml)
             save_image_data(save_image_list, save_names, save_times, base_dir)
-            print(str(month)+"の"+str(blogpage)+"/"+str(page_num_mux)+"ページの処理終了します")
+            print(f'{month}の{blogpage}/{page_num_mux}ページ処理終了します')
     print("終了しました。")
 
 
 def response(response):
-    #共通でレスポンス投げたあとする関数
+    # 共通でレスポンス投げたあとする関数
     if response.status_code != 200:
         print("サイトに入るのを拒否られました,終了します")
         print(response.text)
         sys.exit()
     else:
         meinnogizakahtml = BeautifulSoup(response.content, "html.parser")
-    
+
     return meinnogizakahtml
+
 
 def month_list(start_month, end_month):
     # 月のURLを取得する関数
@@ -45,21 +46,25 @@ def month_list(start_month, end_month):
     meinbloghtml = meinnogizakahtml.find('div', id="sidearchives")
     html_month_list = meinbloghtml.find_all('option')
     all_month_list = [url.get('value') for url in html_month_list]
-    month_list =  month_list_pro(all_month_list, start_month, end_month)
+    month_list = month_list_pro(all_month_list, start_month, end_month)
     return month_list
 
 
 def month_list_pro(all_month_list, start_month, end_month):
-    #処理したい月のリストをつくる関数
-    start_index = all_month_list.index('http://blog.nogizaka46.com/?d='+end_month)
-    end_index = all_month_list.index('http://blog.nogizaka46.com/?d='+start_month)+1
+    # 処理したい月のリストをつくる関数
+    start_index = all_month_list.index(
+        'http://blog.nogizaka46.com/?d='+end_month)
+    end_index = all_month_list.index(
+        'http://blog.nogizaka46.com/?d='+start_month)+1
     month_list = all_month_list[start_index:end_index]
     return month_list
+
 
 def get_html(month, blogpage):
     # HTMLを取得するための処理
     query = {'p': blogpage, 'd': month}
-    response_ = requests.get(BASE_URL, params=query, headers={"User-Agent": ua})
+    response_ = requests.get(BASE_URL, params=query,
+                             headers={"User-Agent": ua})
     nogizakahtml = response(response_)
     bloghtml = nogizakahtml.find('div', class_="right2in")
     return bloghtml
@@ -126,16 +131,26 @@ def neme_conversion(jpnames):
 def get_images(nogihtml):
     # 記事から画像URLを取得
     save_images = []
-    gif = re.compile(r'.gif')
-    rehtml = re.compile(r'http')
     article_bodys = nogihtml.find_all('div', class_="entrybody")
     for article_body in article_bodys:
-        images = article_body.findAll('img')
-        all_image_urls = [url.get('src','') for url in images]
-        non_url_image_urls = [i for i in all_image_urls if not i == '' and re.match(rehtml,i)]
-        image_urls = [non_gif for non_gif in non_url_image_urls if not re.search(gif,non_gif)] 
+        image_els = article_body.findAll('img')
+        image_urls = find_image_urls(image_els)
         save_images.append(image_urls)
     return save_images
+
+
+def find_image_urls(image_els):
+    allow_suffix_list = ['jpg', 'jpeg', 'png', 'svg']
+    image_urls = []
+    for image_el in image_els:
+        image_url = image_el.get('src', '')
+        if not image_url.startswith('http'):
+            continue
+        image_suffix = image_url.split('.')[-1]
+        if image_suffix not in allow_suffix_list:
+            continue
+        image_urls.append(image_url)
+    return image_urls
 
 
 def save_image_data(save_image_list, save_names, save_times, base_dir):
@@ -152,12 +167,9 @@ def save_image_data(save_image_list, save_names, save_times, base_dir):
 
 
 def save_image_data_one(imageurls, name, time, save_path):
-    allow_suffix_list = ['jpg', 'jpeg', 'png', 'svg']
     for index, imageurl in enumerate(imageurls):
         res = requests.get(imageurl)
         image_suffix = imageurl.split('.')[-1]
-        if image_suffix not in allow_suffix_list:
-            continue
         image_filename = f'{name}_{time}_{index:0>3}.{image_suffix}'
         image_path = Path(save_path, image_filename)
         with image_path.open('wb') as fd:
