@@ -7,23 +7,21 @@ from bs4 import BeautifulSoup
 from nogiblogimg import BASE_URL, MEMBER_LIST
 
 
-def get_one_page(page, base_dir, start_month, end_month):
+def get_one_month(base_dir, month):
+    page_num = get_page_num(month)
+    for page in range(1, page_num+1):
+        print(f'{month}の{page}/{page_num}ページ処理開始します')
+        get_one_page(page, base_dir, month)
+        # print(f'{month}の/{page_num}ページ処理終了します')
+
+
+def get_one_page(page, base_dir, month):
     # 指定したページの処理の関数
-    print("開始します。")
-    month_page_list = month_list(start_month, end_month)
-    for monthurl in month_page_list:
-        month = str(monthurl[-6:])
-        page_num = get_page_num(month)
-        page_num_mux = page_num - 1
-        for blogpage in range(page, page_num):
-            nogihtml = get_html(month, blogpage)
-            print(f'{month}の{blogpage}/{page_num_mux}ページ処理開始します')
-            save_times = get_time(nogihtml)
-            save_names = get_name(nogihtml)
-            save_image_list = get_images(nogihtml)
-            save_image_data(save_image_list, save_names, save_times, base_dir)
-            print(f'{month}の{blogpage}/{page_num_mux}ページ処理終了します')
-    print("終了しました。")
+    nogihtml = get_html(month, page)
+    save_times = get_time(nogihtml)
+    save_names = get_name(nogihtml)
+    save_image_list = get_images(nogihtml)
+    save_image_data(save_image_list, save_names, save_times, base_dir)
 
 
 def urlget(url, query={}):
@@ -83,7 +81,7 @@ def get_page_num(month):
             page_list.append(page_num)
         except ValueError:
             continue
-    page_max = max(page_list)+1
+    page_max = max(page_list)
 
     return page_max
 
